@@ -1,0 +1,44 @@
+# Build and output
+[Bb]in/
+[Oo]bj/
+out/
+publish/
+BuildArtifacts/
+.build/
+.artifacts/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# User and IDE files
+.vs/
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# .NET tooling caches
+.dotnet/
+.nuget/
+
+# Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local

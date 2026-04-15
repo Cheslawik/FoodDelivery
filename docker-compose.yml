@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  fooddelivery.api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fooddelivery-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=fooddelivery.sqlserver,1433;Database=FoodDeliveryDb;User Id=sa;Password=Your_password123;TrustServerCertificate=True
+    depends_on:
+      - fooddelivery.sqlserver
+
+  fooddelivery.sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: fooddelivery-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Your_password123
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+volumes:
+  sqlserver-data:

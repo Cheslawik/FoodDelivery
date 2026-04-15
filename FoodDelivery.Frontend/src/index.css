@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+
+:root {
+  --font-base: 'Manrope', 'Trebuchet MS', sans-serif;
+  --font-display: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+  --ink-strong: #e8f0fb;
+  --ink-soft: #9db0c5;
+  --line: rgba(151, 180, 208, 0.25);
+  --card: rgba(12, 18, 29, 0.88);
+  --surface-strong: rgba(20, 28, 43, 0.94);
+  --surface-soft: rgba(93, 136, 179, 0.14);
+  --input-bg: rgba(9, 14, 24, 0.96);
+  --topbar-bg: linear-gradient(
+    to bottom,
+    rgba(5, 10, 18, 0.98),
+    rgba(5, 10, 18, 0.82)
+  );
+  --ok-bg: rgba(67, 160, 71, 0.22);
+  --error-bg: rgba(229, 57, 53, 0.2);
+  --shadow:
+    0 22px 44px rgba(0, 0, 0, 0.52),
+    0 2px 10px rgba(0, 0, 0, 0.32);
+  font-family: var(--font-base);
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ink-strong);
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(130deg, #060b14 0%, #0b1322 46%, #101b2d 100%),
+    repeating-linear-gradient(
+      -20deg,
+      rgba(56, 189, 248, 0.06) 0,
+      rgba(56, 189, 248, 0.06) 18px,
+      transparent 18px,
+      transparent 32px
+    );
+}

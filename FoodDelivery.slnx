@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="FoodDelivery.Application/FoodDelivery.Application.csproj" />
+  <Project Path="FoodDelivery.Domain/FoodDelivery.Domain.csproj" />
+  <Project Path="FoodDelivery.Infrastructure/FoodDelivery.Infrastructure.csproj" />
+  <Project Path="FoodDelivery.Tests/FoodDelivery.Tests.csproj" />
+  <Project Path="FoodDelivery.WebApi/FoodDelivery.WebApi.csproj" />
+</Solution>

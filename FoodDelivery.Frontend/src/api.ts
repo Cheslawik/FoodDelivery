@@ -54,13 +54,13 @@ async function request<T>(
     })
   } catch {
     throw new Error(
-      'Не удалось подключиться к API. Проверьте, что бэкенд запущен и доступен.',
+      'Failed to connect to the API. Make sure the backend is running and reachable.',
     )
   }
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('Сессия истекла. Войдите снова.')
+      throw new Error('Session expired. Please sign in again.')
     }
     throw new Error(await parseError(response))
   }
@@ -157,3 +157,4 @@ export const api = {
   getOrderById: (token: string, orderId: string) =>
     request<Order>(`/orders/${orderId}`, {}, token),
 }
+

@@ -121,7 +121,7 @@ const initialCheckout: CheckoutState = {
 }
 
 function formatMoney(value: number): string {
-  return new Intl.NumberFormat('ru-RU', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 2,
@@ -130,10 +130,10 @@ function formatMoney(value: number): string {
 
 function formatDate(value: string | null): string {
   if (!value) {
-    return 'Как можно скорее'
+    return 'As soon as possible'
   }
 
-  return new Date(value).toLocaleString('ru-RU', {
+  return new Date(value).toLocaleString('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
   })
@@ -152,13 +152,13 @@ function MenuPage({
   return (
     <section className="panel menu-panel">
       <div className="panel-header">
-        <h2>Каталог блюд</h2>
-        <p>{menu?.totalCount ?? 0} позиций</p>
+        <h2>Menu Catalog</h2>
+        <p>{menu?.totalCount ?? 0} items</p>
       </div>
 
       <div className="filters">
         <input
-          placeholder="Поиск по названию или описанию"
+          placeholder="Search by name or description"
           value={menuQuery.search}
           onChange={(event) =>
             setMenuQuery((prev) => ({
@@ -178,7 +178,7 @@ function MenuPage({
             }))
           }
         >
-          <option value="">Все категории</option>
+          <option value="">All categories</option>
           {categories.map((category) => (
             <option key={category} value={category}>
               {category}
@@ -188,7 +188,7 @@ function MenuPage({
       </div>
 
       {menuLoading ? (
-        <p className="state-text">Загружаем меню...</p>
+        <p className="state-text">Loading menu...</p>
       ) : menu && menu.items.length > 0 ? (
         <div className="menu-grid">
           {menu.items.map((item) => (
@@ -212,7 +212,7 @@ function MenuPage({
                     onClick={() => void onAddToCart(item.id)}
                     type="button"
                   >
-                    В корзину
+                    Add to cart
                   </button>
                 </div>
               </div>
@@ -220,7 +220,7 @@ function MenuPage({
           ))}
         </div>
       ) : (
-        <p className="state-text">Ничего не найдено по текущим фильтрам.</p>
+        <p className="state-text">No items found for the current filters.</p>
       )}
 
       <div className="pager">
@@ -234,10 +234,10 @@ function MenuPage({
           }
           type="button"
         >
-          Назад
+          Previous
         </button>
         <span>
-          Страница {menu?.pageNumber ?? 1} из {totalPages}
+          Page {menu?.pageNumber ?? 1} of {totalPages}
         </span>
         <button
           disabled={menuLoading || (menu?.pageNumber ?? 1) >= totalPages}
@@ -246,7 +246,7 @@ function MenuPage({
           }
           type="button"
         >
-          Вперёд
+          Next
         </button>
       </div>
     </section>
@@ -270,16 +270,16 @@ function CartPage({
     <div className="page-stack">
       <section className="panel cart-panel">
         <div className="panel-header">
-          <h2>Корзина</h2>
-          <p>{cartItemsCount} шт.</p>
+          <h2>Cart</h2>
+          <p>{cartItemsCount} items</p>
         </div>
 
         {!isAuthenticated ? (
-          <p className="state-text">Войдите, чтобы управлять корзиной.</p>
+          <p className="state-text">Sign in to manage your cart.</p>
         ) : cartLoading ? (
-          <p className="state-text">Загружаем корзину...</p>
+          <p className="state-text">Loading cart...</p>
         ) : !cart || cart.items.length === 0 ? (
-          <p className="state-text">Корзина пока пустая.</p>
+          <p className="state-text">Cart is empty.</p>
         ) : (
           <>
             <div className="cart-list">
@@ -312,7 +312,7 @@ function CartPage({
               ))}
             </div>
             <div className="summary-line">
-              <span>Итого:</span>
+              <span>Total:</span>
               <strong>{formatMoney(cart.totalAmount)}</strong>
             </div>
           </>
@@ -321,13 +321,13 @@ function CartPage({
 
       <section className="panel checkout-panel">
         <div className="panel-header">
-          <h2>Оформить заказ</h2>
-          <p>ASAP или по расписанию</p>
+          <h2>Place an Order</h2>
+          <p>ASAP or scheduled</p>
         </div>
 
         <form className="checkout-form" onSubmit={(event) => void onOrderSubmit(event)}>
           <input
-            placeholder="Имя получателя"
+            placeholder="Recipient name"
             required
             value={checkoutForm.contactName}
             onChange={(event) =>
@@ -338,7 +338,7 @@ function CartPage({
             }
           />
           <input
-            placeholder="Телефон"
+            placeholder="Phone"
             required
             value={checkoutForm.contactPhone}
             onChange={(event) =>
@@ -355,10 +355,10 @@ function CartPage({
               onChange={(event) => onUseHomeAddressToggle(event.target.checked)}
               type="checkbox"
             />
-            Использовать домашний адрес
+            Use home address
           </label>
           <input
-            placeholder="Адрес доставки"
+            placeholder="Delivery address"
             required
             disabled={useHomeAddress}
             value={checkoutForm.deliveryAddress}
@@ -381,7 +381,7 @@ function CartPage({
               }
               type="checkbox"
             />
-            ASAP (как можно скорее)
+            ASAP (as soon as possible)
           </label>
 
           {!checkoutForm.isAsap && (
@@ -403,7 +403,7 @@ function CartPage({
             disabled={!isAuthenticated || placingOrder || cartItemsCount === 0}
             type="submit"
           >
-            {placingOrder ? 'Отправляем...' : 'Подтвердить заказ'}
+            {placingOrder ? 'Submitting...' : 'Confirm order'}
           </button>
         </form>
       </section>
@@ -422,16 +422,16 @@ function OrdersPage({
   return (
     <section className="panel orders-panel">
       <div className="panel-header">
-        <h2>История заказов</h2>
-        <p>{orders.length} заказов</p>
+        <h2>Order History</h2>
+        <p>{orders.length} orders</p>
       </div>
 
       {!isAuthenticated ? (
-        <p className="state-text">История доступна после входа.</p>
+        <p className="state-text">Order history is available after sign-in.</p>
       ) : ordersLoading ? (
-        <p className="state-text">Загружаем заказы...</p>
+        <p className="state-text">Loading orders...</p>
       ) : orders.length === 0 ? (
-        <p className="state-text">Пока нет оформленных заказов.</p>
+        <p className="state-text">No completed orders yet.</p>
       ) : (
         <div className="orders-list">
           {orders.map((order) => (
@@ -450,15 +450,15 @@ function OrdersPage({
 
       {selectedOrder && (
         <div className="order-details">
-          <h3>Заказ #{selectedOrder.orderId.slice(0, 8)}</h3>
+          <h3>Order #{selectedOrder.orderId.slice(0, 8)}</h3>
           <p>
-            <strong>Контакт:</strong> {selectedOrder.contactName}, {selectedOrder.contactPhone}
+            <strong>Contact:</strong> {selectedOrder.contactName}, {selectedOrder.contactPhone}
           </p>
           <p>
-            <strong>Адрес:</strong> {selectedOrder.deliveryAddress}
+            <strong>Address:</strong> {selectedOrder.deliveryAddress}
           </p>
           <p>
-            <strong>Доставка:</strong>{' '}
+            <strong>Delivery:</strong>{' '}
             {selectedOrder.deliveryType === 'Scheduled'
               ? formatDate(selectedOrder.scheduledDeliveryTimeUtc)
               : 'ASAP'}
@@ -474,14 +474,14 @@ function OrdersPage({
             ))}
           </div>
           <div className="summary-line">
-            <span>Сумма:</span>
+            <span>Amount:</span>
             <strong>{formatMoney(selectedOrder.totalAmount)}</strong>
           </div>
         </div>
       )}
 
       {selectedOrderLoadingId && (
-        <p className="state-text">Загружаем заказ {selectedOrderLoadingId}...</p>
+        <p className="state-text">Loading order {selectedOrderLoadingId}...</p>
       )}
     </section>
   )
@@ -503,18 +503,18 @@ function AuthPanel({
   return (
     <section className="panel auth-panel">
       <div className="panel-header">
-        <h2>{isAuthenticated ? 'Профиль' : 'Авторизация'}</h2>
-        <p>{profile?.email ?? 'Доступ к корзине и заказам'}</p>
+        <h2>{isAuthenticated ? 'Profile' : 'Authentication'}</h2>
+        <p>{profile?.email ?? 'Access to cart and orders'}</p>
       </div>
 
       {isAuthenticated && profile ? (
         <div className="profile-card">
           <p className="welcome">{profile.fullName}</p>
           <p>{profile.email}</p>
-          <p>{profile.phone || 'Телефон не указан'}</p>
-          <p>{profile.address || 'Домашний адрес не указан'}</p>
+          <p>{profile.phone || 'Phone not specified'}</p>
+          <p>{profile.address || 'Home address not specified'}</p>
           <button onClick={clearSession} type="button">
-            Завершить сессию
+            End session
           </button>
         </div>
       ) : (
@@ -525,14 +525,14 @@ function AuthPanel({
               onClick={() => setAuthMode('login')}
               type="button"
             >
-              Вход
+              Sign in
             </button>
             <button
               className={authMode === 'register' ? 'active' : ''}
               onClick={() => setAuthMode('register')}
               type="button"
             >
-              Регистрация
+              Sign up
             </button>
           </div>
 
@@ -555,7 +555,7 @@ function AuthPanel({
           {authMode === 'register' && (
             <>
               <input
-                placeholder="ФИО"
+                placeholder="Full name"
                 required
                 value={registerForm.fullName}
                 onChange={(event) =>
@@ -566,7 +566,7 @@ function AuthPanel({
                 }
               />
               <input
-                placeholder="Телефон"
+                placeholder="Phone"
                 required
                 value={registerForm.phone}
                 onChange={(event) =>
@@ -577,7 +577,7 @@ function AuthPanel({
                 }
               />
               <input
-                placeholder="Адрес"
+                placeholder="Address"
                 required
                 value={registerForm.address}
                 onChange={(event) =>
@@ -592,7 +592,7 @@ function AuthPanel({
 
           <input
             autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
-            placeholder="Пароль"
+            placeholder="Password"
             required
             type="password"
             value={authMode === 'login' ? loginForm.password : registerForm.password}
@@ -611,10 +611,10 @@ function AuthPanel({
 
           <button disabled={authSubmitting} type="submit">
             {authSubmitting
-              ? 'Подождите...'
+              ? 'Please wait...'
               : authMode === 'login'
-                ? 'Войти'
-                : 'Создать аккаунт'}
+                ? 'Sign in'
+                : 'Create account'}
           </button>
         </form>
       )}
@@ -736,7 +736,7 @@ function App() {
       })
       setMenu(response)
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Не удалось загрузить меню.')
+      showError(error instanceof Error ? error.message : 'Failed to load menu.')
     } finally {
       setMenuLoading(false)
     }
@@ -757,7 +757,7 @@ function App() {
       try {
         setCart(await api.getCart(token))
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'Не удалось загрузить корзину.')
+        showError(error instanceof Error ? error.message : 'Failed to load cart.')
       } finally {
         if (!isSilent) {
           setCartLoading(false)
@@ -777,7 +777,7 @@ function App() {
     try {
       setOrders(await api.getOrders(token))
     } catch (error) {
-      showError(error instanceof Error ? error.message : 'Не удалось загрузить заказы.')
+      showError(error instanceof Error ? error.message : 'Failed to load orders.')
     } finally {
       setOrdersLoading(false)
     }
@@ -861,8 +861,8 @@ function App() {
         setSession(response)
         showSuccess(
           authMode === 'login'
-            ? 'Вы успешно вошли в аккаунт.'
-            : 'Регистрация завершена, сессия активна.',
+            ? 'You have successfully signed in.'
+            : 'Registration completed, session is active.',
         )
         setAuthMode('login')
         setRegisterForm((prev) => ({ ...prev, password: '' }))
@@ -871,7 +871,7 @@ function App() {
         navigate('/menu')
       } catch (error) {
         showError(
-          error instanceof Error ? error.message : 'Не удалось выполнить авторизацию.',
+          error instanceof Error ? error.message : 'Failed to complete authentication.',
         )
       } finally {
         setAuthSubmitting(false)
@@ -893,7 +893,7 @@ function App() {
   const handleAddToCart = useCallback(
     async (productId: string) => {
       if (!token) {
-        showError('Сначала войдите в аккаунт, чтобы добавлять товары в корзину.')
+        showError('Please sign in first to add items to your cart.')
         return
       }
 
@@ -914,7 +914,7 @@ function App() {
           }
 
           if (existingItem.quantity >= 50) {
-            throw new Error('Максимум 50 единиц одного товара в корзине.')
+            throw new Error('Maximum 50 units of the same product in the cart.')
           }
 
           await api.updateCartItem(token, existingItem.cartItemId, {
@@ -923,12 +923,12 @@ function App() {
         }
 
         await loadCart({ silent: true })
-        showSuccess('Товар добавлен в корзину.')
+        showSuccess('Item added to cart.')
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : 'Не удалось добавить товар в корзину.'
+          error instanceof Error ? error.message : 'Failed to add item to cart.'
 
-        if (message === 'Сессия истекла. Войдите снова.') {
+        if (message === 'Session expired. Please sign in again.') {
           clearSession()
         }
 
@@ -954,7 +954,7 @@ function App() {
         }
         await loadCart({ silent: true })
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'Не удалось изменить количество.')
+        showError(error instanceof Error ? error.message : 'Failed to update quantity.')
       }
     },
     [loadCart, showError, token],
@@ -969,7 +969,7 @@ function App() {
 
       const homeAddress = profile?.address?.trim()
       if (!homeAddress) {
-        showError('В профиле нет домашнего адреса. Укажите адрес вручную.')
+        showError('No home address in profile. Please enter the address manually.')
         return
       }
 
@@ -987,25 +987,25 @@ function App() {
       event.preventDefault()
 
       if (!token) {
-        showError('Нужна авторизация для оформления заказа.')
+        showError('Authentication is required to place an order.')
         return
       }
 
       if (!cart || cart.items.length === 0) {
-        showError('Корзина пуста.')
+        showError('Cart is empty.')
         return
       }
 
       let scheduledUtc: string | null = null
       if (!checkoutForm.isAsap) {
         if (!checkoutForm.scheduledLocal) {
-          showError('Выберите время доставки.')
+          showError('Please select a delivery time.')
           return
         }
 
         const parsedDate = new Date(checkoutForm.scheduledLocal)
         if (Number.isNaN(parsedDate.getTime())) {
-          showError('Некорректная дата доставки.')
+          showError('Invalid delivery date.')
           return
         }
 
@@ -1030,9 +1030,9 @@ function App() {
 
         setCheckoutForm((prev) => ({ ...prev, isAsap: true, scheduledLocal: '' }))
         navigate('/orders')
-        showSuccess('Заказ успешно оформлен.')
+        showSuccess('Order placed successfully.')
       } catch (error) {
-        showError(error instanceof Error ? error.message : 'Не удалось оформить заказ.')
+        showError(error instanceof Error ? error.message : 'Failed to place order.')
       } finally {
         setPlacingOrder(false)
       }
@@ -1052,7 +1052,7 @@ function App() {
         navigate('/orders')
       } catch (error) {
         showError(
-          error instanceof Error ? error.message : 'Не удалось загрузить детали заказа.',
+          error instanceof Error ? error.message : 'Failed to load order details.',
         )
       } finally {
         setSelectedOrderLoadingId('')
@@ -1071,16 +1071,16 @@ function App() {
         </Link>
         <div className="topbar-right">
           <nav className="views">
-            <NavLink to="/menu">Меню</NavLink>
-            <NavLink to="/cart">Корзина ({cartItemsCount})</NavLink>
-            <NavLink to="/orders">Заказы</NavLink>
+            <NavLink to="/menu">Menu</NavLink>
+            <NavLink to="/cart">Cart ({cartItemsCount})</NavLink>
+            <NavLink to="/orders">Orders</NavLink>
           </nav>
           {isAuthenticated ? (
             <button className="logout" onClick={clearSession} type="button">
-              Выйти
+              Log out
             </button>
           ) : (
-            <span className="auth-pill">Не авторизован</span>
+            <span className="auth-pill">Not signed in</span>
           )}
         </div>
       </header>
@@ -1166,3 +1166,5 @@ function App() {
 }
 
 export default App
+
+

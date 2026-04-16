@@ -1,30 +1,30 @@
 # FoodDelivery Frontend (React)
 
-Frontend-приложение для API `FoodDelivery.WebApi` на React + TypeScript + Vite.
+Frontend application for `FoodDelivery.WebApi`, built with React + TypeScript + Vite.
 
-## Функции
-- Регистрация и логин (`/api/v1/auth/register`, `/api/v1/auth/login`)
-- Хранение JWT в `localStorage`
-- Меню: поиск, фильтр, пагинация, добавление в корзину
-- Корзина: изменение количества и пересчёт суммы
-- Оформление заказа: `ASAP` или `scheduled`
-- История заказов и просмотр деталей
+## Features
+- Registration and login (`/api/v1/auth/register`, `/api/v1/auth/login`)
+- JWT storage in `localStorage`
+- Menu: search, filtering, pagination, add to cart
+- Cart: quantity updates and total recalculation
+- Checkout: `ASAP` or `scheduled`
+- Order history and order details
 
-## Запуск
-1. Убедитесь, что `FoodDelivery.WebApi` запущен на `http://localhost:5197`.
-2. В этом каталоге выполните:
+## Run
+1. Make sure `FoodDelivery.WebApi` is running at `http://localhost:5197`.
+2. In this directory run:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Открыть: `http://localhost:5173`
+Open: `http://localhost:5173`
 
 ## API base URL
-По умолчанию frontend ходит на `/api/v1` (через Vite proxy на `http://localhost:5197`).
+By default the frontend calls `/api/v1` (through Vite proxy to `http://localhost:5197`).
 
-При необходимости можно задать переменную окружения:
+You can override it with an environment variable:
 
 ```bash
 VITE_API_BASE=/api/v1

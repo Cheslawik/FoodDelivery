@@ -2,7 +2,7 @@
 
 Food Delivery SaaS (Front-Office) is a modern web application for online food ordering, designed with a scalable and maintainable architecture. It allows users to browse restaurant menus, manage a shopping cart, place orders with flexible delivery scheduling, and view their order history.
 
-The backend is built with .NET 8 (C#) using Entity Framework Core and MS SQL Server, following Clean Architecture, SOLID principles, and RESTful API design. The frontend is implemented using React, providing a responsive and user-friendly interface.
+The backend is built with .NET 10 (C#) using Entity Framework Core and MS SQL Server, following Clean Architecture, SOLID principles, and RESTful API design. The frontend is implemented using React, providing a responsive and user-friendly interface.
 
 🚀 Key Features
 📋 Menu browsing with categories and detailed dish information

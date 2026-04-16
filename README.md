@@ -11,7 +11,7 @@ The backend is built with .NET 10 (C#) using Entity Framework Core and MS SQL Se
 📦 Order history and details
 📄 Interactive API documentation via Swagger
 🧱 Tech Stack
-Backend: C#, .NET 8, Entity Framework Core
+Backend: C#, .NET 10, Entity Framework Core
 Database: MS SQL Server
 Frontend: React
 API: RESTful

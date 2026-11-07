@@ -1,107 +1,180 @@
-# FoodDelivery Front-Office SaaS (.NET 10)
+# FoodDelivery
 
-REST API for a food delivery front-office service built with `Clean Architecture`:
-- `FoodDelivery.Domain`
-- `FoodDelivery.Application`
-- `FoodDelivery.Infrastructure`
-- `FoodDelivery.WebApi`
-- `FoodDelivery.Tests`
+[![CI](https://github.com/Cheslawik/FoodDelivery/actions/workflows/ci.yml/badge.svg)](https://github.com/Cheslawik/FoodDelivery/actions/workflows/ci.yml)
 
-## Implemented
-- Menu: product list with pagination/filtering + product details.
-- Cart: add/update/remove items, total price calculation.
-- Orders: checkout (ASAP or scheduled), order history, details.
-- JWT auth: register/login, bearer token, refresh token rotation/revoke, role-based access (`Customer`, `Admin`).
-- API versioning: `/api/v1/...`.
-- Swagger (Swashbuckle).
-- Global exception middleware.
-- FluentValidation.
-- Serilog logging.
-- EF Core + SQL Server.
-- Health checks (`/health`).
-- Rate limiting.
-- Demo seed data.
-- Docker + docker-compose.
+REST API for the customer side of a food delivery service: browse the menu, fill a cart and place an
+order for delivery as soon as possible or for a chosen time. A small React client in
+`FoodDelivery.Frontend` uses the API.
 
-## Architecture and Approaches
-- SOLID.
-- Clean Architecture / Onion.
-- CQRS (via separate Query/Command handlers).
-- Repository/Unit of Work through `IApplicationDbContext` + `IUnitOfWork` abstractions.
-- DTO + AutoMapper.
-- Dependency Injection (built-in container).
+Built with **.NET 10**, **ASP.NET Core**, **EF Core** and **SQL Server**, following Clean Architecture.
 
-## Run Locally
-1. Ensure SQL Server is available (locally or in Docker).
-2. Update the connection string in `FoodDelivery.WebApi/appsettings.Development.json`.
-3. Run:
-   ```bash
-   dotnet restore FoodDelivery.slnx
-   dotnet build FoodDelivery.slnx
-   dotnet run --project FoodDelivery.WebApi/FoodDelivery.WebApi.csproj
-   ```
-4. Swagger: `http://localhost:5197/swagger` (based on launch settings).
+## Features
 
-### Auth flow
-- `POST /api/v1/auth/register` -> register and issue `accessToken + refreshToken` (`Customer` role)
-- `POST /api/v1/auth/login` -> login and issue `accessToken + refreshToken`
-- `POST /api/v1/auth/refresh` -> rotate refresh token and issue a new token pair
-- `POST /api/v1/auth/revoke` -> revoke refresh token
-- `GET /api/v1/auth/me` -> current user info (requires access token)
-- In Swagger click `Authorize` and paste: `Bearer <token>`
+- **Menu:** public product list with paging (up to 100 per page), category filter and text search,
+  plus product details. Products switched off by `IsAvailable` are hidden.
+- **Cart:** add, change and remove items (1-50 per product). Adding a product that is already in the
+  cart increases its quantity. The response includes line totals and the cart total.
+- **Orders:** checkout turns the cart into an order and empties the cart. Delivery is either
+  ASAP or scheduled; a scheduled time must be in the future. Order lines keep the product
+  name and price at the time of ordering. Checkout fails if a product has become unavailable.
+  Users see only their own order history and details.
+- **Accounts:** registration and login with a JWT access token and a refresh token. Refresh tokens
+  are stored hashed, rotated on every refresh and can be revoked. Email and phone number are unique.
+- **Ownership checks:** a user can only read or change their own cart items and orders; anything else
+  returns 404.
+- Consistent error responses ([RFC 9457 problem details](https://www.rfc-editor.org/rfc/rfc9457)):
+  400 for validation and business rules, 401, 404, 409 for duplicates, 429 when rate-limited.
+- Validation with FluentValidation, URL API versioning (`/api/v1/...`), Swagger UI with JWT support
+  (Development only), Serilog request logging, a `/health` endpoint, rate limiting
+  (100 requests per minute per user or IP).
+- Demo seed data: 15 products in 6 categories and two users.
+- Docker + docker-compose, GitHub Actions CI, 57 unit and integration tests.
 
-### Seed users
-- `customer@fooddelivery.local / Password123!` (`Customer`)
-- `admin@fooddelivery.local / Password123!` (`Admin`)
+Tokens carry a `Customer` or `Admin` role. All current endpoints accept both roles; there are no
+admin-only endpoints yet.
+
+## Architecture
+
+```
+FoodDelivery.Domain          Entities (User, Product, Category, Cart, Order, RefreshToken), enums. No dependencies.
+FoodDelivery.Application     One handler per command or query, DTOs and projections, validators,
+                             application exceptions. Talks to the database through IApplicationDbContext.
+FoodDelivery.Infrastructure  EF Core DbContext, SQL Server migrations, seed data, JWT, refresh tokens,
+                             password hashing, current user.
+FoodDelivery.WebApi          Controllers, problem-details exception handler, validation filter,
+                             auth, versioning, Swagger, rate limiting.
+FoodDelivery.Tests           xUnit: handler tests on in-memory SQLite and API tests with WebApplicationFactory.
+FoodDelivery.Frontend        React + TypeScript + Vite client.
+```
+
+Dependencies point inwards: WebApi → Application → Domain, and Infrastructure implements the
+interfaces declared in Application. Commands and queries are separate handler classes registered in
+DI, without MediatR. Mapping is plain LINQ projections that EF Core translates to SQL, without
+AutoMapper.
 
 ## Run with Docker
+
 ```bash
 docker compose up --build
 ```
-API: `http://localhost:8080/swagger`
 
-## Main endpoints
-- `GET /api/v1/menu`
-- `GET /api/v1/menu/{id}`
-- `GET /api/v1/cart`
-- `POST /api/v1/cart/items`
-- `PUT /api/v1/cart/items/{id}`
-- `DELETE /api/v1/cart/items/{id}`
-- `POST /api/v1/orders`
-- `GET /api/v1/orders`
-- `GET /api/v1/orders/{id}`
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/refresh`
-- `POST /api/v1/auth/revoke`
-- `GET /api/v1/auth/me`
+Swagger UI: http://localhost:8080/swagger. The API waits for SQL Server to become healthy, applies
+migrations and seeds the demo data on startup.
 
-## EF Core migrations workflow
-1. Create a migration:
-   ```bash
-   dotnet ef migrations add AddRefreshTokensAndRoles --project FoodDelivery.Infrastructure/FoodDelivery.Infrastructure.csproj --startup-project FoodDelivery.WebApi/FoodDelivery.WebApi.csproj --output-dir Persistence/Migrations
-   ```
-2. Apply migrations:
-   ```bash
-   dotnet ef database update --project FoodDelivery.Infrastructure/FoodDelivery.Infrastructure.csproj --startup-project FoodDelivery.WebApi/FoodDelivery.WebApi.csproj --configuration Release
-   ```
+## Run locally
 
-## Agile: user stories
-- As a user, I want to browse and filter the menu to find food quickly.
-- As a user, I want to add items to cart and adjust quantities.
-- As a user, I want to place an order ASAP or for a scheduled slot.
-- As a user, I want to review order history and details.
+Requires the .NET 10 SDK and a SQL Server instance. The simplest way is to start only the database
+from compose:
 
-## Agile: sprints
-- Sprint 1: Foundation + Domain + Infrastructure + base API.
-- Sprint 2: Menu + Cart functionality.
-- Sprint 3: Orders + history + observability + hardening.
+```bash
+docker compose up -d fooddelivery.sqlserver
+dotnet run --project FoodDelivery.WebApi
+```
 
-## Backlog
-- Redis cache for menu.
-- Hangfire jobs (order statuses, notifications).
-- Integration tests (Testcontainers).
-- CI/CD pipeline + quality gates.
+Swagger UI: http://localhost:5197/swagger. `appsettings.Development.json` holds the local connection
+string and a development-only JWT key.
 
-## Note
-If `dotnet restore` fails, verify access to `https://api.nuget.org/v3/index.json` and environment network restrictions.
+Frontend (proxies `/api` to `http://localhost:5197`):
+
+```bash
+cd FoodDelivery.Frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173.
+
+### Demo users
+
+| Email | Password | Role |
+|---|---|---|
+| `customer@fooddelivery.local` | `Password123!` | Customer |
+| `admin@fooddelivery.local` | `Password123!` | Admin |
+
+### Configuration
+
+Outside Development, set these as environment variables (or user-secrets):
+
+| Setting | Purpose |
+|---|---|
+| `ConnectionStrings__DefaultConnection` | SQL Server connection string (required) |
+| `Jwt__Key` | HMAC-SHA256 signing key, at least 32 bytes (checked at startup) |
+| `Jwt__Issuer`, `Jwt__Audience` | Token issuer and audience (defaults in `appsettings.json`) |
+| `Database__ApplyMigrationsOnStartup` | `true` by default; set `false` to run migrations separately |
+
+## Tests
+
+```bash
+dotnet test FoodDelivery.slnx
+```
+
+- **Handler tests** run against in-memory SQLite, which enforces unique indexes and foreign keys,
+  unlike the EF Core InMemory provider. They cover cart rules, checkout (totals, price snapshot,
+  unavailable products), menu paging and filters, registration conflicts, login and refresh-token
+  rotation and revocation.
+- **API tests** host the real application with `WebApplicationFactory` (SQL Server swapped for SQLite)
+  and check status codes, problem-details bodies, the full cart-to-order flow, access to another
+  user's cart and orders, and rate limiting.
+
+CI (`.github/workflows/ci.yml`) runs the tests, fails on vulnerable NuGet packages, checks that the
+EF model has no changes without a migration, applies all migrations to a real SQL Server container,
+lints and builds the frontend, and builds the Docker image.
+
+## API
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/menu?pageNumber=&pageSize=&category=&search=` | - | Paged product list |
+| `GET` | `/api/v1/menu/{id}` | - | Product details |
+| `GET` | `/api/v1/cart` | JWT | Current cart with totals |
+| `POST` | `/api/v1/cart/items` | JWT | Add a product `{ productId, quantity }` |
+| `PUT` | `/api/v1/cart/items/{id}` | JWT | Change quantity `{ quantity }` |
+| `DELETE` | `/api/v1/cart/items/{id}` | JWT | Remove an item |
+| `POST` | `/api/v1/orders` | JWT | Check out the cart |
+| `GET` | `/api/v1/orders` | JWT | Order history, newest first |
+| `GET` | `/api/v1/orders/{id}` | JWT | Order details |
+| `POST` | `/api/v1/auth/register` | - | Register, returns access and refresh tokens |
+| `POST` | `/api/v1/auth/login` | - | Log in, returns access and refresh tokens |
+| `POST` | `/api/v1/auth/refresh` | - | Exchange a refresh token for a new pair |
+| `POST` | `/api/v1/auth/revoke` | - | Revoke a refresh token |
+| `GET` | `/api/v1/auth/me` | JWT | Current user from the token |
+| `GET` | `/health` | - | Liveness check |
+
+Checkout request:
+
+```json
+POST /api/v1/orders
+{
+  "contactName": "Jan Kowalski",
+  "contactPhone": "+48123456789",
+  "deliveryAddress": "ul. Marszałkowska 1, Warszawa",
+  "isAsap": false,
+  "scheduledDeliveryTimeUtc": "2026-12-01T18:00:00Z"
+}
+```
+
+Error example (checkout with an empty cart):
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "Request cannot be completed",
+  "status": 400,
+  "detail": "Cart is empty.",
+  "traceId": "00-d6396cf1b341c8c8ae5efb1a23cbb1e0-050e11fb42c74e9b-00"
+}
+```
+
+## EF Core migrations
+
+```bash
+dotnet tool restore
+dotnet ef migrations add <Name> --project FoodDelivery.Infrastructure --startup-project FoodDelivery.WebApi --output-dir Persistence/Migrations
+dotnet ef database update --project FoodDelivery.Infrastructure --startup-project FoodDelivery.WebApi
+```
+
+## Possible next steps
+
+- Admin endpoints for managing the menu and order statuses.
+- Integration tests against SQL Server with Testcontainers (today the tests use SQLite).
+- Caching the menu.

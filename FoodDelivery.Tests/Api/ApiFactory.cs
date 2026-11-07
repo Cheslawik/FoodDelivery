@@ -21,6 +21,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Testing");
         builder.UseSetting("Database:ApplyMigrationsOnStartup", "false");
+        builder.UseSetting("ConnectionStrings:DefaultConnection", "unused - replaced by SQLite below");
+        builder.UseSetting("Jwt:Key", "integration-tests-signing-key-0123456789abcdef");
 
         builder.ConfigureServices(services =>
         {

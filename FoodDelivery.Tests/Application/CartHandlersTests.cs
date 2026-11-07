@@ -1,3 +1,4 @@
+using FoodDelivery.Application.Common.Validation;
 using FoodDelivery.Application.Features.Cart;
 using FoodDelivery.Domain.Entities;
 using FoodDelivery.Tests.Common;
@@ -65,6 +66,70 @@ public sealed class CartHandlersTests : IDisposable
 
         Assert.Empty(cart.Items);
         Assert.Equal(0m, cart.TotalAmount);
+    }
+
+    [Fact]
+    public async Task UpdateItem_OwnItem_ChangesQuantity()
+    {
+        var (owner, itemId) = await CreateCartWithItemAsync();
+
+        await using var context = _db.CreateContext();
+        await new UpdateCartItemCommandHandler(context, new FakeCurrentUser(owner.Id), context)
+            .Handle(new UpdateCartItemCommand { CartItemId = itemId, Quantity = 5 });
+
+        await using var check = _db.CreateContext();
+        Assert.Equal(5, (await check.CartItems.SingleAsync()).Quantity);
+    }
+
+    [Fact]
+    public async Task UpdateItem_OtherUsersItem_ThrowsNotFound_AndLeavesItemUnchanged()
+    {
+        var (_, itemId) = await CreateCartWithItemAsync();
+        var stranger = await _db.AddUserAsync("b@test.local", "+200");
+
+        await using var context = _db.CreateContext();
+        var handler = new UpdateCartItemCommandHandler(context, new FakeCurrentUser(stranger.Id), context);
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => handler.Handle(new UpdateCartItemCommand { CartItemId = itemId, Quantity = 50 }));
+
+        await using var check = _db.CreateContext();
+        Assert.Equal(1, (await check.CartItems.SingleAsync()).Quantity);
+    }
+
+    [Fact]
+    public async Task DeleteItem_OwnItem_RemovesIt()
+    {
+        var (owner, itemId) = await CreateCartWithItemAsync();
+
+        await using var context = _db.CreateContext();
+        await new DeleteCartItemCommandHandler(context, new FakeCurrentUser(owner.Id), context).Handle(itemId);
+
+        await using var check = _db.CreateContext();
+        Assert.False(await check.CartItems.AnyAsync());
+    }
+
+    [Fact]
+    public async Task DeleteItem_OtherUsersItem_ThrowsNotFound_AndKeepsItem()
+    {
+        var (_, itemId) = await CreateCartWithItemAsync();
+        var stranger = await _db.AddUserAsync("b@test.local", "+200");
+
+        await using var context = _db.CreateContext();
+        var handler = new DeleteCartItemCommandHandler(context, new FakeCurrentUser(stranger.Id), context);
+        await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(itemId));
+
+        await using var check = _db.CreateContext();
+        Assert.True(await check.CartItems.AnyAsync());
+    }
+
+    private async Task<(User Owner, Guid ItemId)> CreateCartWithItemAsync()
+    {
+        var owner = await _db.AddUserAsync("a@test.local", "+100");
+        var product = await _db.AddProductAsync("Pizza", 10m);
+        await AddAsync(owner.Id, product.Id, 1);
+
+        await using var context = _db.CreateContext();
+        return (owner, (await context.CartItems.SingleAsync()).Id);
     }
 
     private async Task AddAsync(Guid userId, Guid productId, int quantity)

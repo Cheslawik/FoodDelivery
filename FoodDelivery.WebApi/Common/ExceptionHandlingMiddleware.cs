@@ -1,6 +1,6 @@
 namespace FoodDelivery.WebApi.Common;
 
-using FoodDelivery.Application.Common.Validation;
+using FoodDelivery.Application.Common.Exceptions;
 using FluentValidation;
 using System.Text.Json;
 
@@ -35,6 +35,18 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
                 message = ex.Message
             }));
         }
+        catch (UnauthorizedException ex)
+        {
+            await WriteAsync(context, StatusCodes.Status401Unauthorized, ex.Message);
+        }
+        catch (ConflictException ex)
+        {
+            await WriteAsync(context, StatusCodes.Status409Conflict, ex.Message);
+        }
+        catch (BusinessRuleException ex)
+        {
+            await WriteAsync(context, StatusCodes.Status400BadRequest, ex.Message);
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Unhandled exception");
@@ -46,5 +58,12 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
                 message = "Internal server error"
             }));
         }
+    }
+
+    private static async Task WriteAsync(HttpContext context, int statusCode, string message)
+    {
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(JsonSerializer.Serialize(new { statusCode, message }));
     }
 }

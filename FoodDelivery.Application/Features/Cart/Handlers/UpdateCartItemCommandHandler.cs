@@ -1,5 +1,5 @@
 using FoodDelivery.Application.Common.Abstractions;
-using FoodDelivery.Application.Common.Validation;
+using FoodDelivery.Application.Common.Exceptions;
 using FoodDelivery.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

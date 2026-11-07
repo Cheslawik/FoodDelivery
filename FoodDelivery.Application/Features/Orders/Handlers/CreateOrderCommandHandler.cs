@@ -1,7 +1,7 @@
 using FoodDelivery.Application.Common.Abstractions;
 using FoodDelivery.Domain.Entities;
 using FoodDelivery.Domain.Enums;
-using FluentValidation;
+using FoodDelivery.Application.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodDelivery.Application.Features.Orders;
@@ -14,11 +14,11 @@ public sealed class CreateOrderCommandHandler(IApplicationDbContext context, ICu
         var cart = await context.Query<Domain.Entities.Cart>()
             .Include(x => x.Items).ThenInclude(x => x.Product)
             .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken)
-            ?? throw new ValidationException("Cart is empty.");
+            ?? throw new BusinessRuleException("Cart is empty.");
 
         if (!cart.Items.Any())
         {
-            throw new ValidationException("Cart is empty.");
+            throw new BusinessRuleException("Cart is empty.");
         }
 
         var order = new Order

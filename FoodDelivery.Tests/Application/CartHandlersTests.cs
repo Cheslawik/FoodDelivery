@@ -1,4 +1,4 @@
-using FoodDelivery.Application.Common.Validation;
+using FoodDelivery.Application.Common.Exceptions;
 using FoodDelivery.Application.Features.Cart;
 using FoodDelivery.Domain.Entities;
 using FoodDelivery.Tests.Common;

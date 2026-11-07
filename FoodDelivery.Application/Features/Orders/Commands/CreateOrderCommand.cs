@@ -1,6 +1,6 @@
 namespace FoodDelivery.Application.Features.Orders;
 
-public class CreateOrderCommand
+public record CreateOrderCommand
 {
     public string ContactName { get; init; } = string.Empty;
     public string ContactPhone { get; init; } = string.Empty;

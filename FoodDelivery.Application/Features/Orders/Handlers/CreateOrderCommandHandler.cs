@@ -1,7 +1,7 @@
 using FoodDelivery.Application.Common.Abstractions;
+using FoodDelivery.Application.Common.Exceptions;
 using FoodDelivery.Domain.Entities;
 using FoodDelivery.Domain.Enums;
-using FoodDelivery.Application.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodDelivery.Application.Features.Orders;
@@ -13,13 +13,31 @@ public sealed class CreateOrderCommandHandler(IApplicationDbContext context, ICu
         var userId = currentUserService.GetCurrentUserId();
         var cart = await context.Query<Domain.Entities.Cart>()
             .Include(x => x.Items).ThenInclude(x => x.Product)
-            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken)
-            ?? throw new BusinessRuleException("Cart is empty.");
+            .FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
 
-        if (!cart.Items.Any())
+        if (cart is null || cart.Items.Count == 0)
         {
             throw new BusinessRuleException("Cart is empty.");
         }
+
+        // A product can be switched off after it was added to the cart; it must not be ordered.
+        var unavailable = cart.Items
+            .Where(x => x.Product is null || !x.Product.IsAvailable)
+            .Select(x => x.Product?.Name ?? x.ProductId.ToString())
+            .ToList();
+        if (unavailable.Count > 0)
+        {
+            throw new BusinessRuleException($"Some products are no longer available: {string.Join(", ", unavailable)}. Remove them from the cart and try again.");
+        }
+
+        // Items keep a snapshot of name and price, so later menu changes do not alter past orders.
+        var items = cart.Items.Select(x => new OrderItem
+        {
+            ProductId = x.ProductId,
+            ProductName = x.Product!.Name,
+            UnitPrice = x.Product.Price,
+            Quantity = x.Quantity
+        }).ToList();
 
         var order = new Order
         {
@@ -29,14 +47,8 @@ public sealed class CreateOrderCommandHandler(IApplicationDbContext context, ICu
             DeliveryAddress = command.DeliveryAddress,
             DeliveryType = command.IsAsap ? DeliveryType.AsSoonAsPossible : DeliveryType.Scheduled,
             ScheduledDeliveryTimeUtc = command.IsAsap ? null : command.ScheduledDeliveryTimeUtc,
-            TotalAmount = cart.Items.Sum(x => (x.Product?.Price ?? 0m) * x.Quantity),
-            Items = cart.Items.Select(x => new OrderItem
-            {
-                ProductId = x.ProductId,
-                ProductName = x.Product?.Name ?? string.Empty,
-                UnitPrice = x.Product?.Price ?? 0m,
-                Quantity = x.Quantity
-            }).ToList()
+            TotalAmount = items.Sum(x => x.UnitPrice * x.Quantity),
+            Items = items
         };
 
         await context.AddAsync(order, cancellationToken);

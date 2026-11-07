@@ -1,6 +1,7 @@
 using FoodDelivery.Application.Common.Exceptions;
 using FoodDelivery.Application.Features.Cart;
 using FoodDelivery.Domain.Entities;
+using FoodDelivery.Infrastructure.Persistence;
 using FoodDelivery.Tests.Common;
 using Microsoft.EntityFrameworkCore;
 
@@ -139,7 +140,7 @@ public sealed class CartHandlersTests : IDisposable
         await handler.Handle(new AddCartItemCommand { ProductId = productId, Quantity = quantity });
     }
 
-    private static GetCartQueryHandler CreateGetCartHandler(Infrastructure.Persistence.FoodDeliveryDbContext context, Guid userId)
+    private static GetCartQueryHandler CreateGetCartHandler(FoodDeliveryDbContext context, Guid userId)
         => new(context, new FakeCurrentUser(userId), TestMapper.Instance);
 
     public void Dispose() => _db.Dispose();

@@ -27,6 +27,8 @@ builder.Host.UseSerilog((context, cfg) =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddFluentValidationAutoValidation();
 
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
@@ -120,7 +122,8 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();

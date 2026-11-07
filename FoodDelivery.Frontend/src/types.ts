@@ -91,8 +91,10 @@ export interface CreateOrderResponse {
   orderId: string
 }
 
+/** RFC 7807 problem details returned by the API. */
 export interface ApiErrorShape {
-  statusCode?: number
-  message?: string
-  errors?: string[]
+  status?: number
+  title?: string
+  detail?: string
+  errors?: Record<string, string[]>
 }

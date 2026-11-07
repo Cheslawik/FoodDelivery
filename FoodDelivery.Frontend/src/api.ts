@@ -17,13 +17,16 @@ const API_ROOT = import.meta.env.VITE_API_BASE ?? '/api/v1'
 
 async function parseError(response: Response): Promise<string> {
   try {
-    const payload = (await response.json()) as ApiErrorShape
-    if (Array.isArray(payload.errors) && payload.errors.length > 0) {
-      return payload.errors.join(' ')
+    // The API returns RFC 7807 problem details; validation errors carry a field -> messages map.
+    const problem = (await response.json()) as ApiErrorShape
+    const validationMessages = Object.values(problem.errors ?? {}).flat()
+    if (validationMessages.length > 0) {
+      return validationMessages.join(' ')
     }
 
-    if (payload.message && payload.message.trim().length > 0) {
-      return payload.message
+    const text = problem.detail ?? problem.title
+    if (text && text.trim().length > 0) {
+      return text
     }
   } catch {
     // Ignore JSON parse errors and use status text fallback.

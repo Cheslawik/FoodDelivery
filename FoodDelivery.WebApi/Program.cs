@@ -13,7 +13,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Options;
 using Serilog;
+using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -104,14 +106,20 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
+// 100 requests per minute per user (or per IP for anonymous calls); over the limit the API answers 429.
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter("default", settings =>
-    {
-        settings.PermitLimit = 100;
-        settings.Window = TimeSpan.FromMinutes(1);
-        settings.QueueLimit = 10;
-    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("default", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "unknown",
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 100,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
 });
 
 builder.Services.AddHealthChecks();

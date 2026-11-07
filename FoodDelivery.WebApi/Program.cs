@@ -6,8 +6,6 @@ using FoodDelivery.Infrastructure.Persistence;
 using FoodDelivery.Infrastructure.Persistence.Seed;
 using FoodDelivery.Infrastructure.Services;
 using FoodDelivery.WebApi.Common;
-using FluentValidation;
-using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -26,10 +24,9 @@ builder.Host.UseSerilog((context, cfg) =>
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>());
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-builder.Services.AddFluentValidationAutoValidation();
 
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
 var jwtOptions = jwtSection.Get<JwtOptions>() ?? new JwtOptions();

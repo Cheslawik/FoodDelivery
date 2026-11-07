@@ -1,12 +1,10 @@
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using FoodDelivery.Application.Common.Abstractions;
 using FoodDelivery.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodDelivery.Application.Features.Orders;
 
-public sealed class GetOrdersQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService, IMapper mapper) : IGetOrdersQueryHandler
+public sealed class GetOrdersQueryHandler(IApplicationDbContext context, ICurrentUserService currentUserService) : IGetOrdersQueryHandler
 {
     public async Task<IReadOnlyCollection<OrderDto>> Handle(CancellationToken cancellationToken = default)
     {
@@ -15,7 +13,7 @@ public sealed class GetOrdersQueryHandler(IApplicationDbContext context, ICurren
             .AsNoTracking()
             .Where(x => x.UserId == userId)
             .OrderByDescending(x => x.CreatedAtUtc)
-            .ProjectTo<OrderDto>(mapper.ConfigurationProvider)
+            .Select(OrderMappings.ToDto)
             .ToListAsync(cancellationToken);
     }
 }

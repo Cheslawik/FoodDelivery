@@ -92,7 +92,7 @@ public sealed class OrderHandlersTests : IDisposable
         await CreateOrderAsync(other.Id, AsapCommand());
 
         await using var context = _db.CreateContext();
-        var orders = await new GetOrdersQueryHandler(context, new FakeCurrentUser(user.Id), TestMapper.Instance).Handle();
+        var orders = await new GetOrdersQueryHandler(context, new FakeCurrentUser(user.Id)).Handle();
 
         Assert.Equal([second, first], orders.Select(x => x.OrderId));
     }
@@ -107,7 +107,7 @@ public sealed class OrderHandlersTests : IDisposable
         var orderId = await CreateOrderAsync(owner.Id, AsapCommand());
 
         await using var context = _db.CreateContext();
-        var handler = new GetOrderByIdQueryHandler(context, new FakeCurrentUser(stranger.Id), TestMapper.Instance);
+        var handler = new GetOrderByIdQueryHandler(context, new FakeCurrentUser(stranger.Id));
 
         await Assert.ThrowsAsync<NotFoundException>(() => handler.Handle(orderId));
     }

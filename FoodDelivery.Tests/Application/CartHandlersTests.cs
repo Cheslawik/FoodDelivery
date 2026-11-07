@@ -141,7 +141,7 @@ public sealed class CartHandlersTests : IDisposable
     }
 
     private static GetCartQueryHandler CreateGetCartHandler(FoodDeliveryDbContext context, Guid userId)
-        => new(context, new FakeCurrentUser(userId), TestMapper.Instance);
+        => new(context, new FakeCurrentUser(userId));
 
     public void Dispose() => _db.Dispose();
 }

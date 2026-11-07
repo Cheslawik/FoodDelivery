@@ -34,7 +34,7 @@ public sealed class MenuTests : IDisposable
         await _db.AddProductAsync("Hidden", 1m, isAvailable: false);
 
         await using var context = _db.CreateContext();
-        var page = await new GetMenuQueryHandler(context, TestMapper.Instance)
+        var page = await new GetMenuQueryHandler(context)
             .Handle(new GetMenuQuery { PageNumber = 2, PageSize = 2 });
 
         Assert.Equal(3, page.TotalCount);
@@ -48,7 +48,7 @@ public sealed class MenuTests : IDisposable
         await _db.AddProductAsync("Cola", 2m);
 
         await using var context = _db.CreateContext();
-        var page = await new GetMenuQueryHandler(context, TestMapper.Instance)
+        var page = await new GetMenuQueryHandler(context)
             .Handle(new GetMenuQuery { Search = "Pepper" });
 
         Assert.Equal(["Pepperoni"], page.Items.Select(x => x.Name));

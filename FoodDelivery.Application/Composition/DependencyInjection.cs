@@ -12,7 +12,6 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddAutoMapper(typeof(DependencyInjection).Assembly);
         services.TryAddSingleton(TimeProvider.System);
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 

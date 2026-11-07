@@ -8,6 +8,7 @@ using FoodDelivery.Infrastructure.Services;
 using FoodDelivery.WebApi.Common;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -137,8 +138,16 @@ app.MapHealthChecks("/health");
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FoodDeliveryDbContext>();
+    if (app.Configuration.GetValue("Database:ApplyMigrationsOnStartup", true))
+    {
+        await db.Database.MigrateAsync();
+    }
+
     await FoodDeliveryDbSeeder.SeedAsync(db);
 }
 
 app.Run();
+
+/// <summary>Entry point; public so integration tests can host the API with WebApplicationFactory.</summary>
+public partial class Program;
 

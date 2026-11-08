@@ -8,8 +8,6 @@ public static class FoodDeliveryDbSeeder
 {
     public static async Task SeedAsync(FoodDeliveryDbContext dbContext, CancellationToken cancellationToken = default)
     {
-        await dbContext.Database.MigrateAsync(cancellationToken);
-
         if (!await dbContext.Users.AnyAsync(cancellationToken))
         {
             var passwordService = new Services.PasswordService();

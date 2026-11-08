@@ -6,14 +6,16 @@ using FoodDelivery.Infrastructure.Persistence;
 using FoodDelivery.Infrastructure.Persistence.Seed;
 using FoodDelivery.Infrastructure.Services;
 using FoodDelivery.WebApi.Common;
-using FluentValidation;
-using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Options;
 using Serilog;
+using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,15 +28,14 @@ builder.Host.UseSerilog((context, cfg) =>
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddControllers();
-builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddControllers(options => options.Filters.Add<ValidationFilter>());
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
-var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
-var jwtOptions = jwtSection.Get<JwtOptions>() ?? new JwtOptions();
-var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key));
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+// Token validation reads JwtOptions at runtime, so the key can come from user-secrets or environment variables.
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<JwtOptions>>((options, jwt) =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -42,9 +43,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateIssuerSigningKey = true,
             ValidateLifetime = true,
-            ValidIssuer = jwtOptions.Issuer,
-            ValidAudience = jwtOptions.Audience,
-            IssuerSigningKey = signingKey,
+            ValidIssuer = jwt.Value.Issuer,
+            ValidAudience = jwt.Value.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Value.Key)),
             ClockSkew = TimeSpan.FromMinutes(1)
         };
     });
@@ -105,14 +106,20 @@ builder.Services.AddSwaggerGen(options =>
     }
 });
 
+// 100 requests per minute per user (or per IP for anonymous calls); over the limit the API answers 429.
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter("default", settings =>
-    {
-        settings.PermitLimit = 100;
-        settings.Window = TimeSpan.FromMinutes(1);
-        settings.QueueLimit = 10;
-    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("default", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "unknown",
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 100,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
 });
 
 builder.Services.AddHealthChecks();
@@ -120,7 +127,8 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 app.UseSerilogRequestLogging();
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -137,8 +145,16 @@ app.MapHealthChecks("/health");
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FoodDeliveryDbContext>();
+    if (app.Configuration.GetValue("Database:ApplyMigrationsOnStartup", true))
+    {
+        await db.Database.MigrateAsync();
+    }
+
     await FoodDeliveryDbSeeder.SeedAsync(db);
 }
 
 app.Run();
+
+/// <summary>Entry point; public so integration tests can host the API with WebApplicationFactory.</summary>
+public partial class Program;
 

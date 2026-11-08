@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  backend:
+    name: Build and test (.NET)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore FoodDelivery.slnx
+
+      # NuGet audit is on, so a known-vulnerable package fails this step.
+      - name: Build
+        run: dotnet build FoodDelivery.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test FoodDelivery.slnx --configuration Release --no-build
+          --logger "trx;LogFileName=test-results.trx"
+          --collect "XPlat Code Coverage"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+
+  migrations:
+    name: EF Core migrations
+    runs-on: ubuntu-latest
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: Ci_Passw0rd!
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Ci_Passw0rd!' -C -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 20s
+    env:
+      EF_ARGS: >-
+        --project FoodDelivery.Infrastructure/FoodDelivery.Infrastructure.csproj
+        --startup-project FoodDelivery.WebApi/FoodDelivery.WebApi.csproj
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # dotnet ef reads project metadata before it builds, so the projects must be restored first.
+      - name: Restore
+        run: |
+          dotnet tool restore
+          dotnet restore FoodDelivery.slnx
+
+      # Fails when the EF model was changed without adding a migration.
+      - name: Check for model changes without a migration
+        run: dotnet ef migrations has-pending-model-changes $EF_ARGS
+
+      - name: Apply all migrations to an empty SQL Server
+        run: dotnet ef database update $EF_ARGS --connection "Server=localhost,1433;Database=FoodDeliveryCi;User Id=sa;Password=Ci_Passw0rd!;TrustServerCertificate=True"
+
+  frontend:
+    name: Lint and build (React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: FoodDelivery.Frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: FoodDelivery.Frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build --tag fooddelivery-api:ci .

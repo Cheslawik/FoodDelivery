@@ -4,6 +4,7 @@ using FoodDelivery.Application.Features.Menu;
 using FoodDelivery.Application.Features.Orders;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FoodDelivery.Application;
 
@@ -11,7 +12,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddAutoMapper(typeof(DependencyInjection).Assembly);
+        services.TryAddSingleton(TimeProvider.System);
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
         services.AddScoped<IGetMenuQueryHandler, GetMenuQueryHandler>();

@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+BuildArtifacts/
+**/node_modules/
+FoodDelivery.Frontend/
+FoodDelivery.Tests/
+.git/
+.github/
+.vs/
+.vscode/
+.idea/

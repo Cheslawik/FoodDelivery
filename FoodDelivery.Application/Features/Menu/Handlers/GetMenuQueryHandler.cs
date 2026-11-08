@@ -1,5 +1,3 @@
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using FoodDelivery.Application.Common.Abstractions;
 using FoodDelivery.Application.Common.Models;
 using FoodDelivery.Domain.Entities;
@@ -7,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FoodDelivery.Application.Features.Menu;
 
-public sealed class GetMenuQueryHandler(IApplicationDbContext context, IMapper mapper) : IGetMenuQueryHandler
+public sealed class GetMenuQueryHandler(IApplicationDbContext context) : IGetMenuQueryHandler
 {
     public async Task<PaginatedResult<ProductDto>> Handle(GetMenuQuery query, CancellationToken cancellationToken = default)
     {
@@ -28,7 +26,7 @@ public sealed class GetMenuQueryHandler(IApplicationDbContext context, IMapper m
             .OrderBy(x => x.Name)
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
-            .ProjectTo<ProductDto>(mapper.ConfigurationProvider)
+            .Select(ProductMappings.ToDto)
             .ToListAsync(cancellationToken);
 
         return new PaginatedResult<ProductDto>

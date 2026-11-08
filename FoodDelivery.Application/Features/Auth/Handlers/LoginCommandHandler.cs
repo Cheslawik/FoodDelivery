@@ -1,6 +1,6 @@
 using FoodDelivery.Application.Common.Abstractions;
 using FoodDelivery.Domain.Entities;
-using FluentValidation;
+using FoodDelivery.Application.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodDelivery.Application.Features.Auth;
@@ -18,7 +18,7 @@ public sealed class LoginCommandHandler(
         var user = await context.Query<User>().FirstOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken);
         if (user is null || !passwordService.VerifyPassword(user.PasswordHash, command.Password))
         {
-            throw new ValidationException("Invalid email or password.");
+            throw new UnauthorizedException("Invalid email or password.");
         }
 
         var refreshTokenData = refreshTokenService.GenerateRefreshToken();

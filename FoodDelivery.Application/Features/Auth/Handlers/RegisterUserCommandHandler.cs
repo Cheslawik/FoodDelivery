@@ -1,7 +1,7 @@
 using FoodDelivery.Application.Common.Abstractions;
 using FoodDelivery.Domain.Entities;
 using FoodDelivery.Domain.Enums;
-using FluentValidation;
+using FoodDelivery.Application.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodDelivery.Application.Features.Auth;
@@ -16,17 +16,24 @@ public sealed class RegisterUserCommandHandler(
     public async Task<AuthResponseDto> Handle(RegisterUserCommand command, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = command.Email.Trim().ToLowerInvariant();
-        var exists = await context.Query<User>().AnyAsync(x => x.Email == normalizedEmail, cancellationToken);
-        if (exists)
+        var phone = command.Phone.Trim();
+
+        // Both columns have unique indexes; checking first turns a database error (500) into a clear 409.
+        if (await context.Query<User>().AnyAsync(x => x.Email == normalizedEmail, cancellationToken))
         {
-            throw new ValidationException("User with this email already exists.");
+            throw new ConflictException("User with this email already exists.");
+        }
+
+        if (await context.Query<User>().AnyAsync(x => x.Phone == phone, cancellationToken))
+        {
+            throw new ConflictException("User with this phone number already exists.");
         }
 
         var user = new User
         {
             Email = normalizedEmail,
             FullName = command.FullName.Trim(),
-            Phone = command.Phone.Trim(),
+            Phone = phone,
             Address = command.Address.Trim(),
             PasswordHash = passwordService.HashPassword(command.Password),
             Role = UserRole.Customer

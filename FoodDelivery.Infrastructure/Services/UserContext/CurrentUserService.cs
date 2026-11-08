@@ -1,5 +1,5 @@
 using FoodDelivery.Application.Common.Abstractions;
-using Microsoft.AspNetCore.Authentication;
+using FoodDelivery.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Http;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -10,11 +10,13 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor)
 {
     public Guid GetCurrentUserId()
     {
-        var claimValue = httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var user = httpContextAccessor.HttpContext?.User;
+        var claimValue = user?.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? user?.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
+        // Never fall back to a default account: a request without a valid user id is unauthenticated.
         return Guid.TryParse(claimValue, out var userId)
             ? userId
-            : Guid.Parse("11111111-1111-1111-1111-111111111111");
+            : throw new UnauthorizedException("The access token does not identify a user.");
     }
 }

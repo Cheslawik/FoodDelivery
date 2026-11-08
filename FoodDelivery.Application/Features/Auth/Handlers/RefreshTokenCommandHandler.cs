@@ -1,6 +1,6 @@
 using FoodDelivery.Application.Common.Abstractions;
 using FoodDelivery.Domain.Entities;
-using FluentValidation;
+using FoodDelivery.Application.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodDelivery.Application.Features.Auth;
@@ -20,7 +20,7 @@ public sealed class RefreshTokenCommandHandler(
 
         if (existingToken is null || !existingToken.IsActive || existingToken.User is null)
         {
-            throw new ValidationException("Refresh token is invalid or expired.");
+            throw new UnauthorizedException("Refresh token is invalid or expired.");
         }
 
         var rotatedToken = refreshTokenService.GenerateRefreshToken();
